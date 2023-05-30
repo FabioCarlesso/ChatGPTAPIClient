@@ -4,19 +4,31 @@ import com.google.gson.Gson;
 import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
+
 public class Main {
     
     private static final String API_URL = "https://api.openai.com/v1/completions";
     private static final String API_KEY = "YOUR_API_KEY";
 
     public static void main(String[] args) throws Exception {
-        OkHttpClient client = new OkHttpClient();
-        String data = new Gson().toJson(getChatGPTRequest());
-        MediaType mediaType = MediaType.parse("application/json");
-        RequestBody body = RequestBody.create(data, mediaType);
-        Response response = client.newCall(getRequest(body)).execute();
+        Response response = new OkHttpClient()
+                .newCall(getRequest(getRequestBody()))
+                .execute();
         String responseBody = response.body().string();
         System.out.println(responseBody);
+        ChatGPTResponse chatGPTResponse = new Gson().fromJson(responseBody, ChatGPTResponse.class);
+        if(!Objects.isNull(chatGPTResponse.getChoices())) {
+            for (ChatGPTCompletion completion : chatGPTResponse.getChoices()) {
+                System.out.println(completion.getText());
+            }
+        }
+    }
+
+    @NotNull
+    private static RequestBody getRequestBody() {
+        MediaType mediaType = MediaType.parse("application/json");
+        return RequestBody.create(new Gson().toJson(getChatGPTRequest()), mediaType);
     }
 
     @NotNull
